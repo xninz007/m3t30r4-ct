@@ -17,7 +17,7 @@ import dlmmPkg from "@meteora-ag/dlmm";
 const createDlmmPool = dlmmPkg.create || dlmmPkg.DLMM?.create || dlmmPkg.default?.create;
 
 const connection = new Connection(RPC);
-const HELIUS_API_KEY = "HELIUS API KEY"; 
+const HELIUS_API_KEY = "HELIUS_API_KEY"; 
 const DLMM_PROGRAM_ID = "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo";
 
 const wallets = JSON.parse(fs.readFileSync("./wallets.json", "utf8"));
@@ -45,6 +45,7 @@ const SETTINGS = {
   slPercent: parseFloat(slPercent),
 };
 
+let pendingAddQueue = []; // { poolAddress: string, addedAt: number }
 let lastSeenSignature = null;
 
 function formatTimestamp() {
@@ -153,6 +154,26 @@ async function handleAddLiquidity(poolAddress) {
   }
 }
 
+async function tryHandlePending() {
+  if (pendingAddQueue.length === 0) return;
+
+  const now = Date.now();
+  pendingAddQueue = pendingAddQueue.filter(item => {
+    if (now - item.addedAt > 120_000) {
+      log(`🗑️ Pending add ${item.poolAddress} expired, skip.`);
+      return false; // hapus expired
+    }
+    return true;
+  });
+
+  if (pendingAddQueue.length === 0) return;
+
+  if (!hasAnyActivePosition()) {
+    const next = pendingAddQueue.shift();
+    log(`🚀 Eksekusi pending add pool: ${next.poolAddress}`);
+    await handleAddLiquidity(next.poolAddress);
+  }
+}
 
 async function mainLoop() {
   log("🔄 Mulai monitoring transaksi...");
@@ -185,11 +206,17 @@ async function mainLoop() {
                 log(`✅ Ditemukan AddLiquidityByStrategy2`);
                 log(`➡️ Pool Address: ${candidate}`);
                 if (hasAnyActivePosition()) {
-                  log(`⛔ Ada posisi aktif di wallet ini, skip add liquidity.`);
+                  log(`⛔ Ada posisi aktif di wallet ini, pending add liquidity.`);
+                
+                  pendingAddQueue.push({
+                    poolAddress: candidate,
+                    addedAt: Date.now()
+                  });
+                
                   continue;
                 }
-                
-                await handleAddLiquidity(candidate);                              
+                await handleAddLiquidity(candidate);
+                              
               }
             }
           }
@@ -226,6 +253,7 @@ async function mainLoop() {
     }
 
     await new Promise(res => setTimeout(res, 5000));
+    await tryHandlePending();
   }
 }
 
