@@ -53,6 +53,21 @@ function formatTimestamp() {
   return `${time} WIB`;
 }
 
+function hasActivePosition(poolAddress) {
+  const pnlStorePath = path.resolve("./pnl.json");
+  if (!fs.existsSync(pnlStorePath)) return false;
+
+  const pnlStore = JSON.parse(fs.readFileSync(pnlStorePath, "utf8"));
+
+  for (const posKey in pnlStore) {
+    const pos = pnlStore[posKey];
+    if (pos.pool === poolAddress && !pos.isClosed) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 function log(msg) {
   console.log(`[${formatTimestamp()}] ${msg}`);
@@ -79,6 +94,8 @@ async function fetchTransactions(address) {
 function isLikelyAddLiquidityByStrategy2(data) {
   return data?.length > 10;
 }
+
+
 
 async function handleAddLiquidity(poolAddress) {
   try {
@@ -166,7 +183,11 @@ async function mainLoop() {
               if (!processedPools.has(candidate)) {
                 log(`✅ Ditemukan AddLiquidityByStrategy2`);
                 log(`➡️ Pool Address: ${candidate}`);
-                await handleAddLiquidity(candidate);
+                if (hasActivePosition(candidate)) {
+                  log(`⛔ Ada posisi aktif di pool ${candidate}, skip add liquidity.`);
+                  continue;
+                }                
+                await handleAddLiquidity(candidate);                
               }
             }
           }
