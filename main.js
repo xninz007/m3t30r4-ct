@@ -53,7 +53,7 @@ function formatTimestamp() {
   return `${time} WIB`;
 }
 
-function hasActivePosition(poolAddress) {
+function hasAnyActivePosition() {
   const pnlStorePath = path.resolve("./pnl.json");
   if (!fs.existsSync(pnlStorePath)) return false;
 
@@ -61,13 +61,14 @@ function hasActivePosition(poolAddress) {
 
   for (const posKey in pnlStore) {
     const pos = pnlStore[posKey];
-    if (pos.pool === poolAddress && !pos.isClosed) {
+    if (!pos.isClosed) {
       return true;
     }
   }
 
   return false;
 }
+
 
 function log(msg) {
   console.log(`[${formatTimestamp()}] ${msg}`);
@@ -183,11 +184,12 @@ async function mainLoop() {
               if (!processedPools.has(candidate)) {
                 log(`✅ Ditemukan AddLiquidityByStrategy2`);
                 log(`➡️ Pool Address: ${candidate}`);
-                if (hasActivePosition(candidate)) {
-                  log(`⛔ Ada posisi aktif di pool ${candidate}, skip add liquidity.`);
+                if (hasAnyActivePosition()) {
+                  log(`⛔ Ada posisi aktif di wallet ini, skip add liquidity.`);
                   continue;
-                }                
-                await handleAddLiquidity(candidate);                
+                }
+                
+                await handleAddLiquidity(candidate);                              
               }
             }
           }
