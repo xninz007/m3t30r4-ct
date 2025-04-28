@@ -1,0 +1,21 @@
+{
+  "name": "project-meteora",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.0",
+    "@meteora-ag/dlmm": "^1.4.11",
+    "@solana/web3.js": "^1.98.0",
+    "axios": "^1.9.0",
+    "bn.js": "^5.2.1",
+    "bs58": "^6.0.0",
+    "fs": "^0.0.1-security",
+    "inquirer": "^12.5.2",
+    "node-fetch": "^3.3.2",
+    "path": "^0.12.7"
+  }
+}
