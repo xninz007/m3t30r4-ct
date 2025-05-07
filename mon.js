@@ -4,6 +4,7 @@ import { Connection, PublicKey, sendAndConfirmTransaction, ComputeBudgetProgram 
 import { RPC } from "./config.js";
 import { getPriceUsdMap, getUserTokenBalanceNative } from "./utils.js";
 import { getPriorityInstructions } from "./lib/fee.js";
+import { autoSwap } from "./autoswap.js";
 import { saveTrackedSwap } from "./swaptracker.js";
 import dlmmPkg from "@meteora-ag/dlmm";
 import BN from "bn.js";
